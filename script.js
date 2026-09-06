@@ -1,4 +1,3 @@
-
 const SUPABASE_URL = "https://lsaydedtuagmnkwdwvtm.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY =
     "sb_publishable_hHpwbA-COIC8MJ1TFUhQ0g_tYVl7ZUn";
@@ -38,15 +37,28 @@ function showToast(message) {
 
 async function getCurrentUser() {
     const {
-        data: { user }
+        data: { user },
+        error
     } = await supabaseClient.auth.getUser();
+
+    if (error) {
+        console.error("Get user error:", error);
+        currentUser = null;
+        return null;
+    }
 
     currentUser = user;
     return user;
 }
 
+function escapeHTML(text) {
+    const div = document.createElement("div");
+    div.textContent = text ?? "";
+    return div.innerHTML;
+}
+
 // =========================
-// ACCOUNT
+// ACCOUNT UI
 // =========================
 
 async function updateAuthUI() {
@@ -61,14 +73,22 @@ async function updateAuthUI() {
     }
 }
 
+// =========================
+// SIGN UP
+// =========================
+
 async function signup(username, email, password) {
     const { data, error } =
         await supabaseClient.auth.signUp({
             email,
-            password
+            password,
+            options: {
+                emailRedirectTo: window.location.origin
+            }
         });
 
     if (error) {
+        console.error("Signup error:", error);
         showToast(error.message);
         return;
     }
@@ -79,18 +99,39 @@ async function signup(username, email, password) {
                 .from("profiles")
                 .upsert({
                     id: data.user.id,
-                    username,
+                    username: username || "Vibely User",
                     bio: "",
                     avatar_url: null
                 });
 
         if (profileError) {
-            console.error(profileError);
+            console.error(
+                "Profile creation error:",
+                profileError
+            );
         }
+    }
 
+    if (data.session) {
         showToast("Account created! 🎉");
+        await updateAuthUI();
+
+        const overlay =
+            document.getElementById("accountOverlay");
+
+        if (overlay) {
+            overlay.style.display = "none";
+        }
+    } else {
+        showToast(
+            "Account created! Check your email to confirm it. 📧"
+        );
     }
 }
+
+// =========================
+// LOGIN
+// =========================
 
 async function login(email, password) {
     const { error } =
@@ -100,6 +141,7 @@ async function login(email, password) {
         });
 
     if (error) {
+        console.error("Login error:", error);
         showToast(error.message);
         return;
     }
@@ -116,8 +158,18 @@ async function login(email, password) {
     }
 }
 
+// =========================
+// LOGOUT
+// =========================
+
 async function logout() {
-    await supabaseClient.auth.signOut();
+    const { error } =
+        await supabaseClient.auth.signOut();
+
+    if (error) {
+        showToast(error.message);
+        return;
+    }
 
     currentUser = null;
 
@@ -144,12 +196,19 @@ async function openProfile() {
         return;
     }
 
-    const { data: profile } =
+    const { data: profile, error } =
         await supabaseClient
             .from("profiles")
             .select("*")
             .eq("id", user.id)
             .maybeSingle();
+
+    if (error) {
+        console.error(
+            "Profile loading error:",
+            error
+        );
+    }
 
     const overlay =
         document.getElementById("profileOverlay");
@@ -201,12 +260,20 @@ async function openProfile() {
                 object-fit:cover;
             `;
 
+            image.onerror = () => {
+                preview.textContent = "👤";
+            };
+
             preview.appendChild(image);
         } else {
             preview.textContent = "👤";
         }
     }
 }
+
+// =========================
+// SAVE PROFILE
+// =========================
 
 async function saveProfile() {
     const user = await getCurrentUser();
@@ -219,17 +286,20 @@ async function saveProfile() {
     const username =
         document
             .getElementById("profileUsername")
-            ?.value.trim() || "";
+            ?.value.trim() ||
+        "Vibely User";
 
     const bio =
         document
             .getElementById("profileBio")
-            ?.value.trim() || "";
+            ?.value.trim() ||
+        "";
 
     const avatar_url =
         document
             .getElementById("profileAvatar")
-            ?.value.trim() || null;
+            ?.value.trim() ||
+        null;
 
     const { error } =
         await supabaseClient
@@ -242,6 +312,11 @@ async function saveProfile() {
             });
 
     if (error) {
+        console.error(
+            "Save profile error:",
+            error
+        );
+
         showToast(error.message);
         return;
     }
@@ -493,7 +568,6 @@ async function openWatchPage(video) {
     watchPage.style.display = "block";
 
     await loadCreator(video.user_id);
-
     await loadComments(video.id);
 
     await getCurrentUser();
@@ -545,6 +619,7 @@ async function loadCreator(userId) {
     if (error || !data) {
         creator.textContent =
             "Unknown creator";
+
         return;
     }
 
@@ -600,20 +675,15 @@ function updateCommentUI() {
 
     if (currentUser) {
         message.textContent = "";
-
         input.disabled = false;
-
         button.disabled = false;
-
         button.style.opacity = "1";
     } else {
         message.textContent =
             "Log in to leave a comment.";
 
         input.disabled = true;
-
         button.disabled = true;
-
         button.style.opacity = "0.5";
     }
 }
@@ -712,17 +782,11 @@ async function loadComments(videoId) {
 
         commentBox.appendChild(date);
 
-        list.appendChild(
-            commentBox
-        );
+        list.appendChild(commentBox);
     }
 }
 
 async function postNewComment() {
-    console.log(
-        "POST COMMENT BUTTON PRESSED"
-    );
-
     const user =
         await getCurrentUser();
 
@@ -730,6 +794,7 @@ async function postNewComment() {
         showToast(
             "Please log in to comment."
         );
+
         return;
     }
 
@@ -737,6 +802,7 @@ async function postNewComment() {
         showToast(
             "No video is open."
         );
+
         return;
     }
 
@@ -754,6 +820,7 @@ async function postNewComment() {
         showToast(
             "Comment box not found."
         );
+
         return;
     }
 
@@ -772,11 +839,10 @@ async function postNewComment() {
 
     if (button) {
         button.disabled = true;
-        button.textContent =
-            "Posting...";
+        button.textContent = "Posting...";
     }
 
-    const { data, error } =
+    const { error } =
         await supabaseClient
             .from("comments")
             .insert({
@@ -785,13 +851,11 @@ async function postNewComment() {
                 user_id:
                     user.id,
                 content
-            })
-            .select()
-            .single();
+            });
 
     if (error) {
         console.error(
-            "COMMENT ERROR:",
+            "Comment error:",
             error
         );
 
@@ -802,17 +866,11 @@ async function postNewComment() {
 
         if (button) {
             button.disabled = false;
-            button.textContent =
-                "Post";
+            button.textContent = "Post";
         }
 
         return;
     }
-
-    console.log(
-        "COMMENT SUCCESS:",
-        data
-    );
 
     input.value = "";
 
@@ -826,9 +884,79 @@ async function postNewComment() {
 
     if (button) {
         button.disabled = false;
-        button.textContent =
-            "Post";
+        button.textContent = "Post";
     }
+}
+
+// =========================
+// VIDEO CARD
+// =========================
+
+function createVideoCard(video) {
+    const card =
+        document.createElement("div");
+
+    card.className =
+        "video-card";
+
+    card.dataset.category =
+        video.category || "";
+
+    card.style.cursor =
+        "pointer";
+
+    const thumbnail =
+        document.createElement("div");
+
+    thumbnail.className =
+        "thumbnail";
+
+    if (video.thumbnail_url) {
+        thumbnail.style.backgroundImage =
+            `url("${video.thumbnail_url}")`;
+
+        thumbnail.style.backgroundSize =
+            "cover";
+
+        thumbnail.style.backgroundPosition =
+            "center";
+    } else {
+        thumbnail.style.background =
+            "linear-gradient(135deg,#5865f2,#9b59b6)";
+    }
+
+    const info =
+        document.createElement("div");
+
+    info.className =
+        "video-info";
+
+    info.innerHTML = `
+        <div style="font-weight:bold;">
+            ${escapeHTML(
+                video.title ||
+                "Untitled"
+            )}
+        </div>
+
+        <div style="
+            color:#888;
+            font-size:13px;
+            margin-top:5px;
+        ">
+            Click to watch
+        </div>
+    `;
+
+    card.appendChild(thumbnail);
+    card.appendChild(info);
+
+    card.addEventListener(
+        "click",
+        () => openWatchPage(video)
+    );
+
+    return card;
 }
 
 // =========================
@@ -856,6 +984,7 @@ async function loadVideos() {
             "Video loading error:",
             error
         );
+
         return;
     }
 
@@ -866,254 +995,10 @@ async function loadVideos() {
     grid.innerHTML = "";
 
     for (const video of data) {
-        const card =
-            document.createElement("div");
-
-        card.className =
-            "video-card";
-
-        card.style.cursor =
-            "pointer";
-
-        const thumbnail =
-            document.createElement("div");
-
-        thumbnail.className =
-            "thumbnail";
-
-        if (video.thumbnail_url) {
-            thumbnail.style.backgroundImage =
-                `url("${video.thumbnail_url}")`;
-
-            thumbnail.style.backgroundSize =
-                "cover";
-
-            thumbnail.style.backgroundPosition =
-                "center";
-        } else {
-            thumbnail.style.background =
-                "linear-gradient(135deg,#5865f2,#9b59b6)";
-        }
-
-        const info =
-            document.createElement("div");
-
-        info.className =
-            "video-info";
-
-        info.innerHTML = `
-            <div style="font-weight:bold;">
-                ${escapeHTML(
-                    video.title ||
-                    "Untitled"
-                )}
-            </div>
-
-            <div style="
-                color:#888;
-                font-size:13px;
-                margin-top:5px;
-            ">
-                Click to watch
-            </div>
-        `;
-
-        card.appendChild(
-            thumbnail
+        grid.appendChild(
+            createVideoCard(video)
         );
-
-        card.appendChild(
-            info
-        );
-
-        card.addEventListener(
-            "click",
-            () => openWatchPage(video)
-        );
-
-        grid.appendChild(card);
     }
-}
-
-// =========================
-// HTML SAFETY
-// =========================
-
-function escapeHTML(text) {
-    const div =
-        document.createElement("div");
-
-    div.textContent = text;
-
-    return div.innerHTML;
-}
-
-// =========================
-// UPLOAD
-// =========================
-
-async function uploadVideo() {
-    const user =
-        await getCurrentUser();
-
-    if (!user) {
-        showToast(
-            "Please log in before uploading."
-        );
-        return;
-    }
-
-    const videoFile =
-        document.getElementById(
-            "videoFile"
-        )?.files?.[0];
-
-    const thumbnailFile =
-        document.getElementById(
-            "thumbnailFile"
-        )?.files?.[0];
-
-    const title =
-        document.getElementById(
-            "videoTitle"
-        )?.value.trim();
-
-    const description =
-        document.getElementById(
-            "videoDescription"
-        )?.value.trim() || "";
-
-    const status =
-        document.getElementById(
-            "uploadStatus"
-        );
-
-    if (!videoFile) {
-        showToast(
-            "Choose a video first."
-        );
-        return;
-    }
-
-    if (!title) {
-        showToast(
-            "Enter a video title."
-        );
-        return;
-    }
-
-    if (status) {
-        status.textContent =
-            "Uploading...";
-    }
-
-    const videoPath =
-        `${user.id}/${Date.now()}-${videoFile.name}`;
-
-    const videoUpload =
-        await supabaseClient.storage
-            .from("videos")
-            .upload(
-                videoPath,
-                videoFile
-            );
-
-    if (videoUpload.error) {
-        console.error(
-            videoUpload.error
-        );
-
-        showToast(
-            "Video upload failed: " +
-            videoUpload.error.message
-        );
-
-        return;
-    }
-
-    const {
-        data: videoPublic
-    } =
-        supabaseClient.storage
-            .from("videos")
-            .getPublicUrl(
-                videoPath
-            );
-
-    let thumbnailUrl = null;
-
-    if (thumbnailFile) {
-        const thumbnailPath =
-            `${user.id}/${Date.now()}-${thumbnailFile.name}`;
-
-        const thumbnailUpload =
-            await supabaseClient.storage
-                .from("thumbnails")
-                .upload(
-                    thumbnailPath,
-                    thumbnailFile
-                );
-
-        if (!thumbnailUpload.error) {
-            const {
-                data: thumbnailPublic
-            } =
-                supabaseClient.storage
-                    .from("thumbnails")
-                    .getPublicUrl(
-                        thumbnailPath
-                    );
-
-            thumbnailUrl =
-                thumbnailPublic.publicUrl;
-        }
-    }
-
-    const { error } =
-        await supabaseClient
-            .from("videos")
-            .insert({
-                user_id: user.id,
-                title,
-                description,
-                video_url:
-                    videoPublic.publicUrl,
-                thumbnail_url:
-                    thumbnailUrl,
-                comments_enabled: true
-            });
-
-    if (error) {
-        console.error(error);
-
-        showToast(
-            "Database error: " +
-            error.message
-        );
-
-        return;
-    }
-
-    if (status) {
-        status.textContent =
-            "Upload successful! 🔥";
-    }
-
-    showToast(
-        "Video uploaded! 🔥"
-    );
-
-    const overlay =
-        document.getElementById(
-            "uploadOverlay"
-        );
-
-    if (overlay) {
-        overlay.style.display =
-            "none";
-    }
-
-    await loadVideos();
 }
 
 // =========================
@@ -1154,7 +1039,10 @@ async function searchVideos() {
             });
 
     if (error) {
-        console.error(error);
+        console.error(
+            "Search error:",
+            error
+        );
 
         showToast(
             "Search failed."
@@ -1176,70 +1064,358 @@ async function searchVideos() {
     }
 
     for (const video of data) {
-        const card =
-            document.createElement("div");
+        grid.appendChild(
+            createVideoCard(video)
+        );
+    }
+}
 
-        card.className =
-            "video-card";
+// =========================
+// SIDEBAR
+// =========================
 
-        card.style.cursor =
-            "pointer";
+async function handleSidebar(page) {
+    const sidebarLinks =
+        document.querySelectorAll(
+            ".sidebar a[data-page]"
+        );
 
-        const thumbnail =
-            document.createElement("div");
+    sidebarLinks.forEach(link => {
+        link.classList.remove("active");
+    });
 
-        thumbnail.className =
-            "thumbnail";
+    const selected =
+        document.querySelector(
+            `.sidebar a[data-page="${page}"]`
+        );
 
-        if (video.thumbnail_url) {
-            thumbnail.style.backgroundImage =
-                `url("${video.thumbnail_url}")`;
+    if (selected) {
+        selected.classList.add("active");
+    }
 
-            thumbnail.style.backgroundSize =
-                "cover";
+    const pageTitle =
+        document.getElementById(
+            "pageTitle"
+        );
 
-            thumbnail.style.backgroundPosition =
-                "center";
+    const pageDescription =
+        document.getElementById(
+            "pageDescription"
+        );
+
+    const titles = {
+        home: "Recommended for you",
+        trending: "Trending",
+        subscriptions: "Subscriptions",
+        liked: "Liked Videos",
+        history: "Watch History",
+        gaming: "Gaming",
+        music: "Music",
+        comedy: "Comedy",
+        sports: "Sports",
+        technology: "Technology"
+    };
+
+    if (pageTitle) {
+        pageTitle.textContent =
+            titles[page] || "Vibely";
+    }
+
+    if (pageDescription) {
+        pageDescription.textContent =
+            page === "home"
+                ? "Videos you might enjoy"
+                : "Videos in " +
+                  (titles[page] || page);
+    }
+
+    if (page === "home") {
+        await loadVideos();
+        return;
+    }
+
+    const categories = [
+        "gaming",
+        "music",
+        "comedy",
+        "sports",
+        "technology"
+    ];
+
+    const cards =
+        document.querySelectorAll(
+            ".video-card"
+        );
+
+    if (categories.includes(page)) {
+        cards.forEach(card => {
+            card.style.display =
+                card.dataset.category === page
+                    ? ""
+                    : "none";
+        });
+
+        return;
+    }
+
+    cards.forEach(card => {
+        card.style.display = "";
+    });
+
+    if (page === "trending") {
+        showToast(
+            "Trending is coming soon! 🔥"
+        );
+    } else if (page === "subscriptions") {
+        showToast(
+            "Subscriptions are coming soon! 📺"
+        );
+    } else if (page === "liked") {
+        showToast(
+            "Liked videos are coming soon! ❤️"
+        );
+    } else if (page === "history") {
+        showToast(
+            "Watch history is coming soon! 🕘"
+        );
+    }
+}
+
+// =========================
+// UPLOAD
+// =========================
+
+async function uploadVideo() {
+    const user =
+        await getCurrentUser();
+
+    if (!user) {
+        showToast(
+            "Please log in before uploading."
+        );
+
+        return;
+    }
+
+    const videoFile =
+        document.getElementById(
+            "videoFile"
+        )?.files?.[0];
+
+    const thumbnailFile =
+        document.getElementById(
+            "thumbnailFile"
+        )?.files?.[0];
+
+    const title =
+        document.getElementById(
+            "videoTitle"
+        )?.value.trim();
+
+    const description =
+        document.getElementById(
+            "videoDescription"
+        )?.value.trim() || "";
+
+    const status =
+        document.getElementById(
+            "uploadStatus"
+        );
+
+    if (!videoFile) {
+        showToast(
+            "Choose a video first."
+        );
+
+        return;
+    }
+
+    if (!title) {
+        showToast(
+            "Enter a video title."
+        );
+
+        return;
+    }
+
+    if (status) {
+        status.textContent =
+            "Uploading video...";
+    }
+
+    const videoPath =
+        `${user.id}/${Date.now()}-${videoFile.name}`;
+
+    const videoUpload =
+        await supabaseClient.storage
+            .from("videos")
+            .upload(
+                videoPath,
+                videoFile
+            );
+
+    if (videoUpload.error) {
+        console.error(
+            videoUpload.error
+        );
+
+        showToast(
+            "Video upload failed: " +
+            videoUpload.error.message
+        );
+
+        if (status) {
+            status.textContent = "";
         }
 
-        const info =
-            document.createElement("div");
-
-        info.className =
-            "video-info";
-
-        info.innerHTML = `
-            <div style="font-weight:bold;">
-                ${escapeHTML(
-                    video.title ||
-                    "Untitled"
-                )}
-            </div>
-
-            <div style="
-                color:#888;
-                font-size:13px;
-                margin-top:5px;
-            ">
-                Click to watch
-            </div>
-        `;
-
-        card.appendChild(
-            thumbnail
-        );
-
-        card.appendChild(
-            info
-        );
-
-        card.addEventListener(
-            "click",
-            () => openWatchPage(video)
-        );
-
-        grid.appendChild(card);
+        return;
     }
+
+    const {
+        data: videoPublic
+    } =
+        supabaseClient.storage
+            .from("videos")
+            .getPublicUrl(
+                videoPath
+            );
+
+    let thumbnailUrl = null;
+
+    if (thumbnailFile) {
+        if (status) {
+            status.textContent =
+                "Uploading thumbnail...";
+        }
+
+        const thumbnailPath =
+            `${user.id}/${Date.now()}-${thumbnailFile.name}`;
+
+        const thumbnailUpload =
+            await supabaseClient.storage
+                .from("thumbnails")
+                .upload(
+                    thumbnailPath,
+                    thumbnailFile
+                );
+
+        if (thumbnailUpload.error) {
+            console.error(
+                thumbnailUpload.error
+            );
+        } else {
+            const {
+                data: thumbnailPublic
+            } =
+                supabaseClient.storage
+                    .from("thumbnails")
+                    .getPublicUrl(
+                        thumbnailPath
+                    );
+
+            thumbnailUrl =
+                thumbnailPublic.publicUrl;
+        }
+    }
+
+    if (status) {
+        status.textContent =
+            "Saving video...";
+    }
+
+    const { error } =
+        await supabaseClient
+            .from("videos")
+            .insert({
+                user_id: user.id,
+                title,
+                description,
+                video_url:
+                    videoPublic.publicUrl,
+                thumbnail_url:
+                    thumbnailUrl,
+                comments_enabled: true
+            });
+
+    if (error) {
+        console.error(error);
+
+        showToast(
+            "Database error: " +
+            error.message
+        );
+
+        if (status) {
+            status.textContent = "";
+        }
+
+        return;
+    }
+
+    if (status) {
+        status.textContent =
+            "Upload successful! 🔥";
+    }
+
+    showToast(
+        "Video uploaded! 🔥"
+    );
+
+    const overlay =
+        document.getElementById(
+            "uploadOverlay"
+        );
+
+    if (overlay) {
+        overlay.style.display =
+            "none";
+    }
+
+    const videoInput =
+        document.getElementById(
+            "videoFile"
+        );
+
+    const thumbnailInput =
+        document.getElementById(
+            "thumbnailFile"
+        );
+
+    const titleInput =
+        document.getElementById(
+            "videoTitle"
+        );
+
+    const descriptionInput =
+        document.getElementById(
+            "videoDescription"
+        );
+
+    if (videoInput) videoInput.value = "";
+    if (thumbnailInput) thumbnailInput.value = "";
+    if (titleInput) titleInput.value = "";
+    if (descriptionInput) descriptionInput.value = "";
+
+    const selectedVideo =
+        document.getElementById(
+            "selectedVideo"
+        );
+
+    const selectedThumbnail =
+        document.getElementById(
+            "selectedThumbnail"
+        );
+
+    if (selectedVideo) {
+        selectedVideo.textContent = "";
+    }
+
+    if (selectedThumbnail) {
+        selectedThumbnail.textContent =
+            "No thumbnail selected";
+    }
+
+    await loadVideos();
 }
 
 // =========================
@@ -1249,6 +1425,9 @@ async function searchVideos() {
 document.addEventListener(
     "DOMContentLoaded",
     async () => {
+        console.log(
+            "Vibely starting..."
+        );
 
         createWatchPage();
 
@@ -1258,7 +1437,7 @@ document.addEventListener(
 
         await loadVideos();
 
-        // PROFILE
+        // PROFILE BUTTON
 
         document
             .getElementById("profileButton")
@@ -1309,7 +1488,6 @@ document.addEventListener(
             ?.addEventListener(
                 "click",
                 async () => {
-
                     const user =
                         await getCurrentUser();
 
@@ -1317,6 +1495,7 @@ document.addEventListener(
                         showToast(
                             "Please log in before uploading."
                         );
+
                         return;
                     }
 
@@ -1349,12 +1528,13 @@ document.addEventListener(
                 }
             );
 
+        // VIDEO FILE
+
         document
             .getElementById("videoFile")
             ?.addEventListener(
                 "change",
                 event => {
-
                     const file =
                         event.target.files[0];
 
@@ -1372,12 +1552,13 @@ document.addEventListener(
                 }
             );
 
+        // THUMBNAIL FILE
+
         document
             .getElementById("thumbnailFile")
             ?.addEventListener(
                 "change",
                 event => {
-
                     const file =
                         event.target.files[0];
 
@@ -1395,44 +1576,53 @@ document.addEventListener(
                 }
             );
 
-        // ACCOUNT
+        // ACCOUNT FORM
 
-        document
-            .getElementById("accountForm")
-            ?.addEventListener(
+        const accountForm =
+            document.getElementById(
+                "accountForm"
+            );
+
+        if (accountForm) {
+            accountForm.dataset.mode =
+                "signup";
+
+            accountForm.addEventListener(
                 "submit",
                 async event => {
-
                     event.preventDefault();
 
                     const username =
-                        document.getElementById(
-                            "username"
-                        )?.value.trim();
+                        document
+                            .getElementById(
+                                "username"
+                            )
+                            ?.value.trim();
 
                     const email =
-                        document.getElementById(
-                            "email"
-                        )?.value.trim();
+                        document
+                            .getElementById(
+                                "email"
+                            )
+                            ?.value.trim();
 
                     const password =
-                        document.getElementById(
-                            "password"
-                        )?.value;
+                        document
+                            .getElementById(
+                                "password"
+                            )
+                            ?.value;
 
                     if (!email || !password) {
                         showToast(
                             "Enter your email and password."
                         );
+
                         return;
                     }
 
                     const loginMode =
-                        document
-                            .getElementById(
-                                "accountForm"
-                            )
-                            ?.dataset.mode ===
+                        accountForm.dataset.mode ===
                         "login";
 
                     if (loginMode) {
@@ -1450,13 +1640,15 @@ document.addEventListener(
                     }
                 }
             );
+        }
+
+        // SWITCH LOGIN / SIGNUP
 
         document
             .getElementById("switchLogin")
             ?.addEventListener(
                 "click",
                 () => {
-
                     const form =
                         document.getElementById(
                             "accountForm"
@@ -1488,32 +1680,29 @@ document.addEventListener(
                         form.dataset.mode ===
                         "login"
                     ) {
-
                         form.dataset.mode =
                             "signup";
 
                         if (title) {
                             title.textContent =
-                                "Create Account";
+                                "Create your Vibely account";
                         }
 
                         if (button) {
                             button.textContent =
-                                "Sign Up";
+                                "Create Account";
                         }
 
                         if (switchButton) {
                             switchButton.textContent =
-                                "Already have an account? Log in";
+                                "Log in";
                         }
 
                         if (username) {
                             username.style.display =
                                 "";
                         }
-
                     } else {
-
                         form.dataset.mode =
                             "login";
 
@@ -1539,6 +1728,8 @@ document.addEventListener(
                     }
                 }
             );
+
+        // CLOSE ACCOUNT
 
         document
             .getElementById("closeAccount")
@@ -1572,6 +1763,7 @@ document.addEventListener(
                 "keydown",
                 event => {
                     if (event.key === "Enter") {
+                        event.preventDefault();
                         searchVideos();
                     }
                 }
@@ -1589,17 +1781,36 @@ document.addEventListener(
                             "videoGrid"
                         )
                         ?.scrollIntoView({
-                            behavior:
-                                "smooth"
+                            behavior: "smooth"
                         });
                 }
             );
+
+        // SIDEBAR
+
+        const sidebarLinks =
+            document.querySelectorAll(
+                ".sidebar a[data-page]"
+            );
+
+        sidebarLinks.forEach(link => {
+            link.addEventListener(
+                "click",
+                async event => {
+                    event.preventDefault();
+
+                    const page =
+                        link.dataset.page;
+
+                    await handleSidebar(page);
+                }
+            );
+        });
 
         // AUTH STATE
 
         supabaseClient.auth.onAuthStateChange(
             async () => {
-
                 await updateAuthUI();
 
                 if (
@@ -1612,6 +1823,9 @@ document.addEventListener(
                 }
             }
         );
+
+        console.log(
+            "Vibely loaded successfully! 🔥"
+        );
     }
 );
-
