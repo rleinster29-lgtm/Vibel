@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vibely</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+
+<nav class="navbar">
+
+```
+<div class="logo">
+    <div class="logo-icon">▶</div>
+    <span>Vibely</span>
+</div>
+
+<div class="search-box">
+    <input type="text" id="searchInput" placeholder="Search Vibely...">
+    <button id="searchButton">🔍</button>
+</div>
+
+<div class="nav-buttons">
+    <button class="upload-btn" id="uploadButton">
+        + Upload
+    </button>
+
+    <button class="profile-btn" id="profileButton">
+        👤
+    </button>
+</div>
+```
+
+</nav>
+
+<!-- LAYOUT -->
+
+<div class="layout">
+
+```
+<!-- SIDEBAR -->
+<aside class="sidebar">
+
+    <a class="active" data-page="home">🏠 Home</a>
+    <a data-page="trending">🔥 Trending</a>
+    <a data-page="subscriptions">📺 Subscriptions</a>
+    <a data-page="liked">❤️ Liked Videos</a>
+    <a data-page="history">🕘 History</a>
+
+    <hr>
+
+    <h3>Categories</h3>
+
+    <a data-page="gaming">🎮 Gaming</a>
+    <a data-page="music">🎵 Music</a>
+    <a data-page="comedy">😂 Comedy</a>
+    <a data-page="sports">⚽ Sports</a>
+    <a data-page="technology">💻 Technology</a>
+
+</aside>
+
+<!-- CONTENT -->
+<main class="content">
+
+    <!-- HERO -->
+    <section class="hero">
+
+        <div>
+            <div class="small-title">
+                WELCOME TO
+            </div>
+
+            <h1>Vibely</h1>
+
+            <p>
+                Discover videos, share your creativity,
+                and find your next favourite creator.
+            </p>
+
+            <button class="start-btn" id="startWatching">
+                Start Watching
+            </button>
+        </div>
+
+    </section>
+
+    <!-- VIDEOS -->
+    <section>
+
+        <div class="page-title">
+            <h2 id="pageTitle">Recommended for you</h2>
+            <p id="pageDescription">Videos you might enjoy</p>
+        </div>
+
+        <div class="video-grid" id="videoGrid">
+
+            <div class="video-card" data-category="gaming">
+                <div class="thumbnail thumb-one">
+                    <span>▶</span>
+                    <small>8:24</small>
+                </div>
+
+                <div class="video-info">
+                    <div class="channel-avatar">V</div>
+
+                    <div>
+                        <h3>Ultimate Gaming Moments</h3>
+                        <p>Vibely Gaming</p>
+                        <p>1.2K views • 2 days ago</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="video-card" data-category="comedy">
+                <div class="thumbnail thumb-two">
+                    <span>▶</span>
+                    <small>5:42</small>
+                </div>
+
+                <div class="video-info">
+                    <div class="channel-avatar">C</div>
+
+                    <div>
+                        <h3>Funniest Moments</h3>
+                        <p>Vibely Comedy</p>
+                        <p>845 views • 1 day ago</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="video-card" data-category="technology">
+                <div class="thumbnail thumb-three">
+                    <span>▶</span>
+                    <small>10:15</small>
+                </div>
+
+                <div class="video-info">
+                    <div class="channel-avatar">T</div>
+
+                    <div>
+                        <h3>Cool Tech You Should Know</h3>
+                        <p>TechZone</p>
+                        <p>2.4K views • 4 days ago</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="video-card" data-category="music">
+                <div class="thumbnail thumb-four">
+                    <span>▶</span>
+                    <small>3:58</small>
+                </div>
+
+                <div class="video-info">
+                    <div class="channel-avatar">M</div>
+
+                    <div>
+                        <h3>New Music Vibes</h3>
+                        <p>Vibely Music</p>
+                        <p>3.1K views • 5 days ago</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="video-card" data-category="sports">
+                <div class="thumbnail thumb-five">
+                    <span>▶</span>
+                    <small>7:31</small>
+                </div>
+
+                <div class="video-info">
+                    <div class="channel-avatar">S</div>
+
+                    <div>
+                        <h3>Best Sports Moments</h3>
+                        <p>Vibely Sports</p>
+                        <p>982 views • 3 days ago</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="video-card" data-category="gaming">
+                <div class="thumbnail thumb-six">
+                    <span>▶</span>
+                    <small>12:06</small>
+                </div>
+
+                <div class="video-info">
+                    <div class="channel-avatar">G</div>
+
+                    <div>
+                        <h3>Gaming Highlights</h3>
+                        <p>Vibely Gaming</p>
+                        <p>1.8K views • 6 days ago</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </section>
+
+</main>
+```
+
+</div>
+
+<!-- ACCOUNT WINDOW -->
+
+<div class="account-overlay" id="accountOverlay">
+
+```
+<div class="account-box">
+
+    <button class="close-account" id="closeAccount" type="button">×</button>
+
+    <div class="account-logo">▶</div>
+
+    <h2 id="accountTitle">
+        Create your Vibely account
+    </h2>
+
+    <p class="account-subtitle">
+        Join Vibely and start sharing videos.
+    </p>
+
+    <form id="accountForm">
+
+        <input id="username" type="text" placeholder="Username" maxlength="30">
+
+        <input id="email" type="email" placeholder="Email" required>
+
+        <input id="password" type="password" placeholder="Password" required>
+
+        <button class="account-submit" type="submit">
+            Create Account
+        </button>
+
+    </form>
+
+    <p class="switch-account">
+        Already have an account?
+        <button id="switchLogin" type="button">Log in</button>
+    </p>
+
+</div>
+```
+
+</div>
+
+<!-- PROFILE WINDOW -->
+
+<div class="account-overlay" id="profileOverlay">
+
+```
+<div class="account-box">
+
+    <button class="close-account" id="closeProfile" type="button">×</button>
+
+    <div class="account-logo" id="profilePreview">👤</div>
+
+    <h2>Edit your profile</h2>
+
+    <p class="account-subtitle">
+        Customize how people see you on Vibely.
+    </p>
+
+    <input
+        id="profileUsername"
+        type="text"
+        placeholder="Username"
+        maxlength="30"
+        style="width:100%;padding:14px;border-radius:10px;border:1px solid #30303a;background:#1a1a23;color:white;outline:none;margin-bottom:12px;"
+    >
+
+    <textarea
+        id="profileBio"
+        placeholder="Write something about yourself..."
+        maxlength="160"
+        style="width:100%;min-height:100px;padding:14px;border-radius:10px;border:1px solid #30303a;background:#1a1a23;color:white;outline:none;resize:vertical;margin-bottom:12px;font-family:inherit;"
+    ></textarea>
+
+    <input
+        id="profileAvatar"
+        type="url"
+        placeholder="Profile picture URL"
+        style="width:100%;padding:14px;border-radius:10px;border:1px solid #30303a;background:#1a1a23;color:white;outline:none;margin-bottom:12px;"
+    >
+
+    <button class="account-submit" id="saveProfile" type="button">
+        Save Profile
+    </button>
+
+</div>
+```
+
+</div>
+
+<!-- UPLOAD WINDOW -->
+
+<div class="account-overlay" id="uploadOverlay">
+
+```
+<div class="account-box">
+
+    <button class="close-account" id="closeUpload" type="button">×</button>
+
+    <div class="account-logo">🎬</div>
+
+    <h2>Upload a video</h2>
+
+    <p class="account-subtitle">
+        Share your video with the Vibely community.
+    </p>
+
+    <label for="videoFile" style="display:block;margin-bottom:8px;">
+        Video
+    </label>
+
+    <input
+        type="file"
+        id="videoFile"
+        accept="video/*"
+        style="width:100%;margin-bottom:8px;color:white;"
+    >
+
+    <p id="selectedVideo" style="color:#888894;font-size:13px;margin-bottom:15px;"></p>
+
+    <label for="thumbnailFile" style="display:block;margin-bottom:8px;">
+        Thumbnail
+    </label>
+
+    <input
+        type="file"
+        id="thumbnailFile"
+        accept="image/*"
+        style="width:100%;margin-bottom:8px;color:white;"
+    >
+
+    <p id="selectedThumbnail" style="color:#888894;font-size:13px;margin-bottom:15px;">
+        No thumbnail selected
+    </p>
+
+    <label for="videoTitle" style="display:block;margin-bottom:8px;">
+        Title
+    </label>
+
+    <input
+        id="videoTitle"
+        type="text"
+        placeholder="Give your video a title"
+        maxlength="100"
+        style="width:100%;padding:14px;border-radius:10px;border:1px solid #30303a;background:#1a1a23;color:white;outline:none;margin-bottom:15px;"
+    >
+
+    <label for="videoDescription" style="display:block;margin-bottom:8px;">
+        Description
+    </label>
+
+    <textarea
+        id="videoDescription"
+        placeholder="Tell people what your video is about..."
+        maxlength="500"
+        style="width:100%;min-height:100px;padding:14px;border-radius:10px;border:1px solid #30303a;background:#1a1a23;color:white;outline:none;resize:vertical;margin-bottom:15px;font-family:inherit;"
+    ></textarea>
+
+    <div style="padding:12px;border-radius:10px;background:#1a1a23;color:#c9c9d2;margin-bottom:15px;">
+        💬 Comments are <strong>ON</strong>
+    </div>
+
+    <button class="account-submit" id="uploadVideoButton" type="button">
+        Upload Video 🚀
+    </button>
+
+    <p id="uploadStatus" style="text-align:center;color:#888894;margin-top:12px;"></p>
+
+</div>
+```
+
+</div>
+
+<!-- MESSAGE BOX -->
+
+<div class="message-box" id="messageBox">
+
+```
+<h2 id="messageTitle">Vibely</h2>
+
+<p id="messageText">
+    Welcome to Vibely!
+</p>
+
+<button id="messageButton">
+    OK
+</button>
+```
+
+</div>
+
+<!-- TOAST -->
+
+<div class="toast" id="toast"></div>
+
+<!-- SUPABASE -->
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- JAVASCRIPT -->
+
+<script src="script.js"></script>
+
+</body>
+</html>
